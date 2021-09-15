@@ -13,8 +13,8 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
-	for j := 0; j < 5; j++ {
-		for i := 0; i < 1000; i++ {
+	for j := 0; j < 1; j++ {
+		for i := 0; i < 500; i++ {
 			wg.Add(1)
 			fileNum := i + j*1000
 			go testMemcache(fileNum, &wg)
@@ -40,7 +40,7 @@ func testMemcache(i int, wg *sync.WaitGroup) {
 
 	// Waiting for the server response
 	serverResponse, err := serverReader.ReadString('\n')
-	fmt.Println("Received server response")
+	//fmt.Println("Received server response")
 	switch err {
 	case nil:
 		fmt.Println(strings.TrimSpace(serverResponse))
@@ -61,7 +61,7 @@ func testMemcache(i int, wg *sync.WaitGroup) {
 
 	// Waiting for the server response
 	serverResponse, err = serverReader.ReadString('\n')
-	fmt.Println("Received server response")
+	//fmt.Println("Received server response")
 	switch err {
 	case nil:
 		fmt.Println(strings.TrimSpace(serverResponse))
