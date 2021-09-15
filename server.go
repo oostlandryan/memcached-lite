@@ -28,8 +28,8 @@ func main() {
 }
 
 func handleConnection(c net.Conn) {
-	defer c.Close()
-
+	defer closeConnection(c)
+	//fmt.Println("Connected to ", c.RemoteAddr())
 	for {
 		data, err := bufio.NewReader(c).ReadString('\n')
 		if err != nil {
@@ -52,19 +52,20 @@ func handleConnection(c net.Conn) {
 
 func setKeyValue(c net.Conn, args []string) {
 	if len(args) < 3 {
+		fmt.Println(args)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
 	value, err := bufio.NewReader(c).ReadString('\n')
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
 	key, _ := args[1], args[2]
 	err = ioutil.WriteFile(key, []byte(value), 0666)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
@@ -72,5 +73,16 @@ func setKeyValue(c net.Conn, args []string) {
 }
 
 func getKeyValue(c net.Conn, args []string) {
+	key := args[1]
+	bs, err := ioutil.ReadFile(key)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	c.Write([]byte(key + " " + string(len(bs)) + "\r\n"))
+	c.Write(bs)
+}
 
+func closeConnection(c net.Conn) {
+	//fmt.Println("Closing connection with", c.RemoteAddr().String())
+	c.Close()
 }
