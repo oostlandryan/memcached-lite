@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -32,7 +34,7 @@ func handleConnection(c net.Conn) {
 	//fmt.Println("Connected to ", c.RemoteAddr())
 	for {
 		data, err := bufio.NewReader(c).ReadString('\n')
-		if err != nil {
+		if err != nil && err != io.EOF {
 			fmt.Println(err)
 			return
 		}
@@ -57,14 +59,14 @@ func setKeyValue(c net.Conn, args []string) {
 		return
 	}
 	value, err := bufio.NewReader(c).ReadString('\n')
-	if err != nil {
+	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
 	key, _ := args[1], args[2]
 	err = ioutil.WriteFile(key, []byte(value), 0666)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
@@ -75,10 +77,10 @@ func setKeyValue(c net.Conn, args []string) {
 func getKeyValue(c net.Conn, args []string) {
 	key := args[1]
 	bs, err := ioutil.ReadFile(key)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 	}
-	c.Write([]byte(key + " " + string(len(bs)) + "\r\n"))
+	c.Write([]byte("VALUE " + key + " " + strconv.Itoa(len(bs)) + " \r\n"))
 	c.Write(bs)
 }
 

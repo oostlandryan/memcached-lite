@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -11,65 +10,104 @@ import (
 	"time"
 )
 
+type memcacheConnection struct {
+	con net.Conn
+}
+
 func main() {
 	var wg sync.WaitGroup
 	for j := 0; j < 1; j++ {
-		for i := 0; i < 500; i++ {
+		for i := 0; i < 5; i++ {
 			wg.Add(1)
 			fileNum := i + j*1000
-			go testMemcache(fileNum, &wg)
+			go testSetGet(fileNum, &wg)
 		}
 		wg.Wait()
 	}
 }
 
-func testMemcache(i int, wg *sync.WaitGroup) {
-	con, err := net.Dial("tcp", "localhost:9889")
+// Creates a new memcacheConnection to the given address
+func newMemcacheConnection(address string) (memcacheConnection, error) {
+	con, err := net.Dial("tcp4", address)
 	if err != nil {
-		fmt.Println(err)
+		return memcacheConnection{}, err
 	}
-	defer con.Close()
-	defer wg.Done()
-	time.Sleep(time.Second)
-	serverReader := bufio.NewReader(con)
-	filename := "firstTest" + strconv.Itoa(i)
-	con.Write([]byte("set " + filename + ".testfile 0 \r\n"))
-	time.Sleep(500 * time.Millisecond)
-	con.Write([]byte("this is my " + strconv.Itoa(i) + "th test string\r\n"))
-	time.Sleep(500 * time.Millisecond)
+	return memcacheConnection{con: con}, nil
+}
 
-	// Waiting for the server response
+// Closes memcacheConnection's TCP connection
+func (m memcacheConnection) Close() {
+	m.con.Close()
+}
+
+// Method of memcacheConnection to call the set command
+func (m memcacheConnection) set(key string, value string) (string, error) {
+	// Write to server
+	m.con.Write([]byte("set " + key + " " + strconv.Itoa(len(value)) + " \r\n"))
+	time.Sleep(250 * time.Millisecond)
+	m.con.Write([]byte(value + " \r\n"))
+	// Get server response
+	serverReader := bufio.NewReader(m.con)
 	serverResponse, err := serverReader.ReadString('\n')
-	//fmt.Println("Received server response")
-	switch err {
-	case nil:
-		fmt.Println(strings.TrimSpace(serverResponse))
-	case io.EOF:
-		fmt.Println("server closed the connection")
-		return
-	default:
-		fmt.Printf("server error: %v\n", err)
-		return
+	if err != nil {
+		return "", err
+	}
+	return serverResponse, nil
+
+}
+
+// Method of memcacheConnection to call the get command
+func (m memcacheConnection) get(key string) (string, error) {
+	// Write to server
+	m.con.Write([]byte("get " + key + " \r\n"))
+	// Get server response
+	serverReader := bufio.NewReader(m.con)
+	serverResponse, err := serverReader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	responseSlice := strings.Split(serverResponse, " ")
+	var size int
+	size, err = strconv.Atoi(responseSlice[2])
+	if err != nil {
+		return "", err
+	}
+	size = size - 3
+	// Read data block
+	result := make([]byte, size)
+	_, err = serverReader.Read(result)
+	if err != nil {
+		return "", err
+	}
+	return string(result), nil
+}
+
+// Sets a value and checks if it gets the same value
+func testSetGet(i int, wg *sync.WaitGroup) {
+	memCon, err := newMemcacheConnection("localhost:9889")
+	if err != nil {
+		fmt.Println("Error: ", err)
 	}
 
-	filename = "secondTest" + strconv.Itoa(i)
-	con.Write([]byte("set " + filename + ".testfile 0 \r\n"))
-	time.Sleep(500 * time.Millisecond)
-	con.Write([]byte("this is my " + strconv.Itoa(i) + "th test string\r\n"))
-	time.Sleep(500 * time.Millisecond)
-	con.Write([]byte("EXIT\r\n"))
+	defer wg.Done()
+	defer memCon.Close()
 
-	// Waiting for the server response
-	serverResponse, err = serverReader.ReadString('\n')
-	//fmt.Println("Received server response")
-	switch err {
-	case nil:
-		fmt.Println(strings.TrimSpace(serverResponse))
-	case io.EOF:
-		fmt.Println("server closed the connection")
-		return
-	default:
-		fmt.Printf("server error: %v\n", err)
-		return
+	var response string
+	key := "key" + strconv.Itoa(i) + ".ryoost"
+	value := "This is the " + strconv.Itoa(i) + "th value"
+	response, err = memCon.set(key, value)
+	if err != nil {
+		fmt.Println("Error: ", err)
 	}
+	fmt.Println(response)
+
+	var gotValue string
+	gotValue, err = memCon.get(key)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	fmt.Printf("Set: %s Get: %s\n", "\""+value+"\"", "\""+gotValue+"\"")
+
 }
