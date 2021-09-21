@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const serverAddress = "localhost:9887"
+
 type memcacheConnection struct {
 	con net.Conn
 }
@@ -76,7 +78,7 @@ func (m memcacheConnection) get(key string) (string, error) {
 
 // Sets a value and checks if it gets the same value
 func testSetGet(i int, c chan bool) {
-	memCon, err := newMemcacheConnection("localhost:9889")
+	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
@@ -126,7 +128,7 @@ func testMassConcurrency(connections int) {
 
 // Tests if large (>250 chars) keys and keys with special characters can work
 func testKeyNames() {
-	memCon, err := newMemcacheConnection("localhost:9889")
+	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
@@ -213,7 +215,7 @@ func testKeyNames() {
 
 // Tests if large values (~4KB) can be stored and retrieved
 func testLargeValue() {
-	memCon, err := newMemcacheConnection("localhost:9889")
+	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}

@@ -3,15 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net"
-	"os"
+	"io"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	l, err := net.Listen("tcp4", ":9889")
+	l, err := net.Listen("tcp4", ":9887")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -81,7 +81,7 @@ func setKeyValue(c net.Conn, args []string) {
 	}
 	value := string(v[0:size])
 
-	err = os.WriteFile(key, []byte(value[0:size]), 0666)
+	err = ioutil.WriteFile(key, []byte(value[0:size]), 0666)
 	if err != nil {
 		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
@@ -92,7 +92,7 @@ func setKeyValue(c net.Conn, args []string) {
 
 func getKeyValue(c net.Conn, args []string) {
 	key := args[1]
-	bs, err := os.ReadFile(key)
+	bs, err := ioutil.ReadFile(key)
 	if err != nil {
 		if err != io.EOF {
 			fmt.Println("Error: ", err)
