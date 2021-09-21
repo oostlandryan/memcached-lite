@@ -16,14 +16,11 @@ type memcacheConnection struct {
 
 func main() {
 	var wg sync.WaitGroup
-	for j := 0; j < 1; j++ {
-		for i := 0; i < 5; i++ {
-			wg.Add(1)
-			fileNum := i + j*1000
-			go testSetGet(fileNum, &wg)
-		}
-		wg.Wait()
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go testSetGet(i, &wg)
 	}
+	wg.Wait()
 }
 
 // Creates a new memcacheConnection to the given address
@@ -72,7 +69,6 @@ func (m memcacheConnection) get(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	size = size - 3
 	// Read data block
 	result := make([]byte, size)
 	_, err = serverReader.Read(result)

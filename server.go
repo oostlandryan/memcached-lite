@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -58,14 +58,24 @@ func setKeyValue(c net.Conn, args []string) {
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
-	value, err := bufio.NewReader(c).ReadString('\n')
+
+	key, s := args[1], args[2]
+	size, err := strconv.Atoi(s)
+	if err != nil {
+		fmt.Println("Error:", err)
+		c.Write([]byte("NOT-STORED\r\n"))
+		return
+	}
+	v := make([]byte, size+3)
+	_, err = bufio.NewReader(c).Read(v)
 	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
 		return
 	}
-	key, _ := args[1], args[2]
-	err = ioutil.WriteFile(key, []byte(value), 0666)
+	value := string(v[0:size])
+
+	err = os.WriteFile(key, []byte(value[0:size]), 0666)
 	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 		c.Write([]byte("NOT-STORED\r\n"))
@@ -76,12 +86,12 @@ func setKeyValue(c net.Conn, args []string) {
 
 func getKeyValue(c net.Conn, args []string) {
 	key := args[1]
-	bs, err := ioutil.ReadFile(key)
+	bs, err := os.ReadFile(key)
 	if err != nil && err != io.EOF {
 		fmt.Println("Error:", err)
 	}
 	c.Write([]byte("VALUE " + key + " " + strconv.Itoa(len(bs)) + " \r\n"))
-	c.Write(bs)
+	c.Write([]byte(string(bs) + "\r\n"))
 }
 
 func closeConnection(c net.Conn) {
