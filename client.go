@@ -6,7 +6,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -15,12 +14,9 @@ type memcacheConnection struct {
 }
 
 func main() {
-	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go testSetGet(i, &wg)
-	}
-	wg.Wait()
+	testMassConcurrency(500)
+	testKeyNames()
+	testLargeValue()
 }
 
 // Creates a new memcacheConnection to the given address
@@ -79,31 +75,175 @@ func (m memcacheConnection) get(key string) (string, error) {
 }
 
 // Sets a value and checks if it gets the same value
-func testSetGet(i int, wg *sync.WaitGroup) {
+func testSetGet(i int, c chan bool) {
 	memCon, err := newMemcacheConnection("localhost:9889")
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
 
-	defer wg.Done()
 	defer memCon.Close()
 
 	var response string
 	key := "key" + strconv.Itoa(i) + ".ryoost"
-	value := "This is the " + strconv.Itoa(i) + "th value"
+	value := "This is the " + strconv.Itoa(i) + "th value at %s" + time.Now().String()
 	response, err = memCon.set(key, value)
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
-	fmt.Println(response)
+	if response == "NOT-STORED\r\n" {
+		c <- false
+		return
+	}
 
 	var gotValue string
 	gotValue, err = memCon.get(key)
-
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
 
-	fmt.Printf("Set: %s Get: %s\n", "\""+value+"\"", "\""+gotValue+"\"")
+	c <- value == gotValue
 
+}
+
+// Calls testSetGet connections number of times and prints out the number of success and failures
+func testMassConcurrency(connections int) {
+	c := make(chan bool, connections)
+	for i := 0; i < connections; i++ {
+		go testSetGet(i, c)
+	}
+	correctCount := 0
+	incorrectCount := 0
+	for i := 0; i < connections; i++ {
+		result := <-c
+		if result {
+			correctCount++
+		} else {
+			incorrectCount++
+		}
+	}
+	fmt.Printf("Test Mass Concurrency: %d correct get-set operations, %d incorrect get-set operations\n", correctCount, incorrectCount)
+}
+
+// Tests if large (>250 chars) keys and keys with special characters can work
+func testKeyNames() {
+	memCon, err := newMemcacheConnection("localhost:9889")
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	defer memCon.Close()
+	var longKey string
+	key := "A"
+	for i := 0; i < 247; i++ {
+		key = key + "A"
+	}
+	var response string
+	response, err = memCon.set(key+".ryoost", "The key is "+key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		longKey = "failed"
+	}
+	if response == "NOT-STORED\r\n" {
+		longKey = "failed"
+	} else {
+		longKey = "passed"
+	}
+
+	var tooLongKey string
+	key = "A"
+	for i := 0; i < 248; i++ {
+		key = key + "A"
+	}
+	response, err = memCon.set(key+".ryoost", "The key is "+key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		tooLongKey = "failed"
+	}
+	if response == "NOT-STORED\r\n" {
+		tooLongKey = "failed"
+	} else {
+		tooLongKey = "passed"
+	}
+
+	var newlineKey string
+	key = "my\nstrange\rkey"
+	response, err = memCon.set(key+".ryoost", "The key is "+key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		newlineKey = "failed"
+	}
+	if response == "NOT-STORED\r\n" {
+		newlineKey = "failed"
+	} else {
+		newlineKey = "passed"
+	}
+
+	var spaceKey string
+	key = "my strange key"
+	response, err = memCon.set(key+".ryoost", "The key is "+key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		spaceKey = "failed"
+	}
+	if response == "NOT-STORED\r\n" {
+		spaceKey = "failed"
+	} else {
+		spaceKey = "passed"
+	}
+
+	var specialKey string
+	key = "my&strange|key"
+	response, err = memCon.set(key+".ryoost", "The key is "+key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		specialKey = "failed"
+	}
+	if response == "NOT-STORED\r\n" {
+		specialKey = "failed"
+	} else {
+		specialKey = "passed"
+	}
+
+	fmt.Printf("254 byte key: %s\n", longKey)
+	fmt.Printf("255 byte key: %s\n", tooLongKey)
+	fmt.Printf("Newline Key: %s\n", newlineKey)
+	fmt.Printf("Key with spaces: %s\n", spaceKey)
+	fmt.Printf("Key with special characters: %s\n", specialKey)
+}
+
+// Tests if large values (~4KB) can be stored and retrieved
+func testLargeValue() {
+	memCon, err := newMemcacheConnection("localhost:9889")
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	defer memCon.Close()
+	value := "A"
+	for i := 0; i < 4000; i++ {
+		value = value + "A"
+	}
+	key := "largeFile.ryoost"
+	var response string
+	response, err = memCon.set(key, value)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		fmt.Println("Large Value: failed")
+		return
+	}
+	if response == "NOT-STORED\r\n" {
+		fmt.Println("Large Value: failed")
+		return
+	}
+
+	var gotValue string
+	gotValue, err = memCon.get(key)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+	if gotValue != value {
+		fmt.Println("Large Value: failed")
+	} else {
+		fmt.Println("Large Value: passed")
+	}
 }
