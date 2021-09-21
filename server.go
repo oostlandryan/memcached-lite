@@ -3,22 +3,23 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
-	"io"
 	"strconv"
 	"strings"
 )
 
 func main() {
+	// Listen for incoming TCP connections on port 9887
 	l, err := net.Listen("tcp4", ":9887")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	defer l.Close()
-
+	defer l.Close() // close the listener when the function ends
+	// For each new connection, run handleConnection in a new go-routine
 	for {
 		c, err := l.Accept()
 		if err != nil {
@@ -31,7 +32,7 @@ func main() {
 
 func handleConnection(c net.Conn) {
 	defer closeConnection(c)
-	//fmt.Println("Connected to ", c.RemoteAddr())
+
 	for {
 		data, err := bufio.NewReader(c).ReadString('\n')
 		if err != nil {
@@ -41,6 +42,7 @@ func handleConnection(c net.Conn) {
 			return
 		}
 		args := strings.Split(strings.TrimSpace(string(data)), " ")
+		// parse command
 		if args[0] == "set" {
 			setKeyValue(c, args)
 		} else if args[0] == "get" {
