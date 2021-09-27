@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"net"
 	"strconv"
@@ -9,16 +10,21 @@ import (
 	"time"
 )
 
-const serverAddress = "localhost:9887"
+var serverAddress string
 
 type memcacheConnection struct {
 	con net.Conn
 }
 
 func main() {
-	testMassConcurrency(500)
-	testKeyNames()
-	testLargeValue()
+	// Parse command-line arguments
+	flag.StringVar(&serverAddress, "server", "localhost:8080", "address server is listening on")
+	flag.Parse()
+	fmt.Printf("Client will connect to %s\n", serverAddress)
+	// Run Tests
+	testMassConcurrency(5)
+	//testKeyNames()
+	//testLargeValue()
 }
 
 // Creates a new memcacheConnection to the given address
@@ -81,6 +87,8 @@ func testSetGet(i int, c chan bool) {
 	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
+		c <- false
+		return
 	}
 
 	defer memCon.Close()
@@ -131,6 +139,7 @@ func testKeyNames() {
 	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
+		return
 	}
 
 	defer memCon.Close()
@@ -218,6 +227,7 @@ func testLargeValue() {
 	memCon, err := newMemcacheConnection(serverAddress)
 	if err != nil {
 		fmt.Println("Error: ", err)
+		return
 	}
 
 	defer memCon.Close()

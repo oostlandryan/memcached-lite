@@ -16,3 +16,6 @@
 
 # my test files
 *.testfile
+
+# Python Stuff
+/venv

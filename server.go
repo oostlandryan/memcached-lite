@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,8 +12,13 @@ import (
 )
 
 func main() {
-	// Listen for incoming TCP connections on port 9887
-	l, err := net.Listen("tcp4", ":9887")
+	// Parse command-line arguments
+	portPtr := flag.Int("port", 8080, "port to listen for incoming TCP connections")
+	flag.Parse()
+	port := *portPtr
+	fmt.Printf("Listening on port %d\n", port)
+	// Listen for incoming TCP connections on specified port
+	l, err := net.Listen("tcp4", ":"+strconv.Itoa(port))
 	if err != nil {
 		fmt.Println(err)
 		return
