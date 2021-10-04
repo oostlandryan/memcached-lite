@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 	fmt.Printf("Client will connect to %s\n", serverAddress)
 	// Run Tests
-	testMassConcurrency(5)
+	testMassConcurrency(100)
 	//testKeyNames()
 	//testLargeValue()
 }

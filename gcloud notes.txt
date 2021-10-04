@@ -1,0 +1,15 @@
+choose project: gcloud config set project my-project-id
+create instance: gcloud compute instances create my-instance --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
+delete instance: gcloud compute instances delete my-instance
+after creating a new instance: gcloud compute config-ssh
+ssh into instance: gcloud compute ssh my-instance --zone=us-central1-a
+
+note: use tmux to manage sessions so that I can switch between ssh connections
+note: yes | some command
+    will default yes to any prompts from "some command"
+
+in instance:
+    git clone git://github.com/oostlandryan/memcached-lite.git
+    cd memcached-lite
+    install golang
+
