@@ -24,7 +24,7 @@ func main() {
 	fmt.Printf("Client will connect to %s\n", serverAddress)
 	fmt.Println("------------------------------------")
 	// Run Tests
-	testMassConcurrency(100)
+	testMassConcurrency(500)
 	//testKeyNames()
 	//testLargeValue()
 }
