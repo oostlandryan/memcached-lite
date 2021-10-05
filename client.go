@@ -20,7 +20,9 @@ func main() {
 	// Parse command-line arguments
 	flag.StringVar(&serverAddress, "server", "localhost:8080", "address server is listening on")
 	flag.Parse()
+	fmt.Println("------------------------------------")
 	fmt.Printf("Client will connect to %s\n", serverAddress)
+	fmt.Println("------------------------------------")
 	// Run Tests
 	testMassConcurrency(100)
 	//testKeyNames()
@@ -131,7 +133,9 @@ func testMassConcurrency(connections int) {
 			incorrectCount++
 		}
 	}
+	fmt.Println("---------------------------------------------------------------------------------------")
 	fmt.Printf("Test Mass Concurrency: %d correct get-set operations, %d incorrect get-set operations\n", correctCount, incorrectCount)
+	fmt.Println("---------------------------------------------------------------------------------------")
 }
 
 // Tests if large (>250 chars) keys and keys with special characters can work

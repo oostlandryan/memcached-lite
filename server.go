@@ -16,7 +16,9 @@ func main() {
 	portPtr := flag.Int("port", 8080, "port to listen for incoming TCP connections")
 	flag.Parse()
 	port := *portPtr
-	fmt.Printf("Listening on port %d\n", port)
+	fmt.Println("------------------------------------")
+	fmt.Printf("Server listening on port %d\n", port)
+	fmt.Println("------------------------------------")
 	// Listen for incoming TCP connections on specified port
 	l, err := net.Listen("tcp4", ":"+strconv.Itoa(port))
 	if err != nil {
