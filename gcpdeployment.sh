@@ -5,8 +5,14 @@ gcloud config set project $PROJECTNAME
 # Create server and client instances
 gcloud compute instances create ryoost-server --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
 gcloud compute instances create ryoost-client --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
+# Wait a bit to make sure the instances are actually up and running
+sleep 10
+
 # Make sure ssh keys are updated (sometimes this fixes issues, sometimes it does not)
 gcloud compute config-ssh
+# Make sure the ssh keys have propogated
+sleep 10
+
 # get server internal ip address
 SERVERADDRESS=$(gcloud compute instances describe ryoost-server --format='get(networkInterfaces[0].networkIP)')
 
@@ -15,7 +21,6 @@ gcloud compute ssh ryoost-server --zone=us-central1-a --command="git clone git:/
 cd memcached-lite
 yes | sudo apt install golang-go
 go run server.go -port=9889" &
-
 # Since the previous command is run in the background, we don't know if the server is ready when the next command runs, so we'll wait a bit
 sleep 10
 
