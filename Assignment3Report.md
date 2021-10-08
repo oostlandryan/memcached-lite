@@ -3,5 +3,6 @@ Ryan Oostland
 ryoost
 ## Running the Server and Client on Google Compute Engine
 A bash script, [gcpdeployment.sh](gcpdeployment.sh), starts the server and client instances in the PROJECTNAME project using gcloud. It then uses `gcloud compute ssh` to access the instances, clone the git repo containing my memcached-lite code, install Go, and finally run the programs. Memcached-lite outputs are wrapped in dashes and should be easy to read in the terminal. After the programs have ran, the server and client instances are deleted.
-## Known Issues
-Sometimes `gcloud compute ssh` fails with error 255. This is a known issue with gcloud. The easiest fix seems to be to delete the ssh keys associated with the project through the gcp console. Other suggested fixes include calling `gcloud compute config-ssh` or adding a new firewall rule to allow ssh on port 22 \(this didn't work for me as it said I already had that rule\). This might just be an issue with my project and is never an issue the first time the script is ran. Additionally, I accidentally added my $50 credit to my person Google account, not my IU account. As a result I have not had the VCP issues that I've heard other students have. This script therefore assumes that the project is configured with Google's default network settings.
+## Assumptions
+The [gcpdeployment.sh](gcpdeployment.sh) script assumes that gcloud is installed and that the project is configured with Google's default network settings. It also assumes that the Memorystore API and Service Networking API are enabled for the project.
+.

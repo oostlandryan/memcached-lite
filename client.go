@@ -25,8 +25,8 @@ func main() {
 	fmt.Println("------------------------------------")
 	// Run Tests
 	testMassConcurrency(1000)
-	//testKeyNames()
-	//testLargeValue()
+	testKeyNames()
+	testLargeValue()
 }
 
 // Creates a new memcacheConnection to the given address
@@ -218,12 +218,13 @@ func testKeyNames() {
 	} else {
 		specialKey = "passed"
 	}
-
+	fmt.Println("---------------------------------------------------------------------------------------")
 	fmt.Printf("254 byte key: %s\n", longKey)
 	fmt.Printf("255 byte key: %s\n", tooLongKey)
 	fmt.Printf("Newline Key: %s\n", newlineKey)
 	fmt.Printf("Key with spaces: %s\n", spaceKey)
 	fmt.Printf("Key with special characters: %s\n", specialKey)
+	fmt.Println("---------------------------------------------------------------------------------------")
 }
 
 // Tests if large values (~4KB) can be stored and retrieved
@@ -243,23 +244,33 @@ func testLargeValue() {
 	var response string
 	response, err = memCon.set(key, value)
 	if err != nil {
+		fmt.Println("---------------------------------------------------------------------------------------")
 		fmt.Println("Error: ", err)
 		fmt.Println("Large Value: failed")
+		fmt.Println("---------------------------------------------------------------------------------------")
 		return
 	}
 	if response == "NOT-STORED\r\n" {
+		fmt.Println("---------------------------------------------------------------------------------------")
 		fmt.Println("Large Value: failed")
+		fmt.Println("---------------------------------------------------------------------------------------")
 		return
 	}
 
 	var gotValue string
 	gotValue, err = memCon.get(key)
 	if err != nil {
+		fmt.Println("---------------------------------------------------------------------------------------")
 		fmt.Println("Error: ", err)
+		fmt.Println("---------------------------------------------------------------------------------------")
 	}
 	if gotValue != value {
+		fmt.Println("---------------------------------------------------------------------------------------")
 		fmt.Println("Large Value: failed")
+		fmt.Println("---------------------------------------------------------------------------------------")
 	} else {
+		fmt.Println("---------------------------------------------------------------------------------------")
 		fmt.Println("Large Value: passed")
+		fmt.Println("---------------------------------------------------------------------------------------")
 	}
 }

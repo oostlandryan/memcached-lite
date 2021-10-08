@@ -2,9 +2,15 @@
 # select gcloud project
 PROJECTNAME="cloud-computing-327315"
 gcloud config set project $PROJECTNAME
+
+# Configure Network
+gcloud compute networks create ryoost-network --subnet-mode=auto --bgp-routing-mode=regional --mtu=1460
+#gcloud compute firewall-rules create ryoost-tcp --network ryoost-network --allow tcp,udp,icmp --source-ranges 10.0.0.0/9
+gcloud compute firewall-rules create ryoost-ssh --network ryoost-network --allow tcp:22,tcp:3389,icmp,tcp:9889
+
 # Create server and client instances
-gcloud compute instances create ryoost-server --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
-gcloud compute instances create ryoost-client --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
+gcloud compute instances create ryoost-server --network=ryoost-network --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
+gcloud compute instances create ryoost-client --network=ryoost-network --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
 # Wait a bit to make sure the instances are actually up and running
 sleep 10
 
@@ -28,8 +34,16 @@ sleep 10
 gcloud compute ssh ryoost-client --zone=us-central1-a --command="git clone git://github.com/oostlandryan/memcached-lite.git
 cd memcached-lite
 yes | sudo apt install golang-go
-go run client.go -server=$SERVERADDRESS:9889"
+go run client.go -server=$SERVERADDRESS:9889
+exit"
+
+# Test Google's Memorystore
+#gcloud memcache instances create ryoost-memcache --node-count=1 --node-cpu=1 --node-memory=1GB --region=us-central1
 
 # Delete server and client instances
 yes | gcloud compute instances delete ryoost-server
 yes | gcloud compute instances delete ryoost-client
+#yes | gcloud memcache instances delete ryoost-memcache
+yes | gcloud compute firewall-rules delete ryoost-ssh
+sleep 10
+yes | gcloud compute networks delete ryoost-network
