@@ -5,8 +5,7 @@ gcloud config set project $PROJECTNAME
 
 # Configure Network
 gcloud compute networks create ryoost-network --subnet-mode=auto --bgp-routing-mode=regional --mtu=1460
-#gcloud compute firewall-rules create ryoost-tcp --network ryoost-network --allow tcp,udp,icmp --source-ranges 10.0.0.0/9
-gcloud compute firewall-rules create ryoost-ssh --network ryoost-network --allow tcp:22,tcp:3389,icmp,tcp:9889
+gcloud compute firewall-rules create ryoost-tcp --network ryoost-network --allow tcp:22,tcp:3389,icmp,tcp:9889
 
 # Create server and client instances
 gcloud compute instances create ryoost-server --network=ryoost-network --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud --zone=us-central1-a
@@ -44,6 +43,6 @@ exit"
 yes | gcloud compute instances delete ryoost-server
 yes | gcloud compute instances delete ryoost-client
 #yes | gcloud memcache instances delete ryoost-memcache
-yes | gcloud compute firewall-rules delete ryoost-ssh
-sleep 10
+yes | gcloud compute firewall-rules delete ryoost-tcp
+sleep 5
 yes | gcloud compute networks delete ryoost-network

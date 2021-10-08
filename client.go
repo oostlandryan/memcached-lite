@@ -237,7 +237,7 @@ func testLargeValue() {
 
 	defer memCon.Close()
 	value := "A"
-	for i := 0; i < 1024*10; i++ {
+	for i := 0; i < 1024*5; i++ {
 		value = value + "A"
 	}
 	key := "largeFile.ryoost"
